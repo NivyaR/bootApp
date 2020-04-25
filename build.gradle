@@ -1,0 +1,78 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.springframework.cloud:spring-cloud-contract-gradle-plugin:2.2.2.RELEASE'
+    }
+}
+
+plugins {
+    id 'org.springframework.boot' version '2.2.6.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+    id 'org.asciidoctor.convert' version '1.5.8'
+    id 'java'
+}
+
+apply plugin: 'spring-cloud-contract'
+
+group = 'com.poshley'
+version = '1.0'
+sourceCompatibility = '1.8'
+
+configurations {
+    developmentOnly
+    runtimeClasspath {
+        extendsFrom developmentOnly
+    }
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    set('snippetsDir', file("build/generated-snippets"))
+    set('springCloudVersion', "Hoxton.SR3")
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web-services'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    runtimeOnly 'mysql:mysql-connector-java'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
+
+    compile group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
+    testImplementation 'com.unboundid:unboundid-ldapsdk'
+    testImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo'
+    testImplementation 'org.springframework.cloud:spring-cloud-starter-contract-stub-runner'
+    testImplementation 'org.springframework.cloud:spring-cloud-starter-contract-verifier'
+    testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+contracts {
+    targetFramework = org.springframework.cloud.contract.verifier.config.TestFramework.JUNIT5
+}
+
+test {
+    outputs.dir snippetsDir
+    useJUnitPlatform()
+}
+
+asciidoctor {
+    inputs.dir snippetsDir
+    dependsOn test
+}
